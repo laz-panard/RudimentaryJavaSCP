@@ -1,25 +1,51 @@
 package SCPsolver;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import DecisionTree.ImplicationGraph;
+import DecisionTree.Node;
+
 public class Problem {
 	private Map<String, Set> domains;
 	private List<Constraint> constraint;
+	private ImplicationGraph graph;
 	
 	/**
 	 * @param domains
 	 * @param constraint
 	 */
+	public Problem(Map<String, Set> domains, List<Constraint> constraint, ImplicationGraph graph) {
+		this.domains = domains;
+		this.constraint = constraint;
+		this.graph = graph;
+	}
+	
 	public Problem(Map<String, Set> domains, List<Constraint> constraint) {
 		this.domains = domains;
 		this.constraint = constraint;
+		this.graph = this.graphInitialization();
 	}
 	
+	public ImplicationGraph graphInitialization() {
+		List<Node> nodes = new ArrayList<Node>();
+		for (String var : domains.keySet()) {
+			Node tempNode = new Node(var, this.domains.get(var), 0);
+			nodes.add(tempNode);
+		}
+		
+		List<Node> currNodes = new ArrayList<Node>(nodes);
+		
+		ImplicationGraph graph = new ImplicationGraph(nodes, currNodes);
+		return graph;
+	}
+
 	/**
 	 * @return the domains
 	 */
@@ -32,6 +58,14 @@ public class Problem {
 	 */
 	public void setDomains(Map<String, Set> domains) {
 		this.domains = domains;
+	}
+	
+	public ImplicationGraph getGraph() {
+		return this.graph;
+	}
+	
+	public void setGraph(ImplicationGraph graph) {
+		this.graph = graph;
 	}
 	
 	/**
@@ -104,23 +138,47 @@ public class Problem {
 	
 	//The main recursive method navigating through the search space.
 	//Returns the number of solutions to the problem.
-	static public int enumerate(Problem problem) {
+	static public Tuple<Integer, List<Constraint>> enumerate(Problem problem) {
 		//We try to filter with all constraints and repeat while all constraints
 		//actually restrain variables' domains. We stop once every constraint proves
 		//not to be able to restrain anymore in a single iteration.
 		boolean notStable = true;
+		boolean conflict = false;
 		while(notStable) {
-			notStable = false;
+			notStable = false;			
 			for(Constraint c : problem.getConstraint()) {
-				notStable = notStable || c.filter(problem);
+				
+				if(!conflict) {
+					if(c.filter(problem)) {
+						notStable = true;
+						problem.getGraph().nodeFiltering(c, problem.getDomains());
+					
+						//We check wether or not a conflicting node has been created
+					
+						for(Node n : problem.getGraph().getCurrNodes()) {
+							if (n.getDomain().isEmpty()) {
+								problem.getGraph().setConflict(n);
+								conflict = true;
+								notStable = false;
+							}
+						}
+					}
+				}
+				
 			}
+		}
+		
+		//S'il y a conflit dans graph, on le résout puis on l'ajout aux nouvelles contraintes
+		//COMMENT ON AJOUTE LA CONTRAINTE PTN -> un accu 
+		if (problem.getGraph().getConflict() != null) {
+			problem.getConstraint().add(problem.getGraph().conflictLearn());
 		}
 		
 		//Then, we enter search space by making a decision
 		Tuple<String, Object> decision = problem.createDecision();
 		//If so, we have a solution since all domains are singletons.
 		if(decision == null) {
-			return 1;
+			return new Tuple<Integer, List<Constraint>>(1, problem.getConstraint());
 		}
 		
 		String var = decision.get1();
@@ -128,20 +186,29 @@ public class Problem {
 		
 		//Problem is unsolvable.
 		if(val == null) {
-			return 0;
+			return new Tuple<Integer, List<Constraint>>(0, problem.getConstraint());
 		}
 		
 		//We redo the same operation, once with var instantiated to val,
 		//and once with val taken away from val's domain. Propagate only
 		//allows to do so without actually modifying our problem's domain.
-		return Problem.propagate(problem, var, val, true) + Problem.propagate(problem, var, val, false);
+		
+		Tuple<Integer, List<Constraint>> leftSearch = Problem.propagate(problem, var, val, true);
+		
+		problem.setConstraint(leftSearch.get2());
+		
+		Tuple<Integer, List<Constraint>> rightSearch = Problem.propagate(problem, var, val, false);
+		
+		problem.setConstraint(rightSearch.get2());
+		return new Tuple<Integer, List<Constraint>>(leftSearch.get1() + rightSearch.get1(), problem.getConstraint());
 	}
 	
 	//Allow to instantiate variables to chosen values and to restrain abusively variables' domains
 	//Without actually modifying our problem's domains. Doing so, we instantiate new problems.
-	static public int propagate(Problem problem, String var, Object val, boolean apply) {
+	static public Tuple<Integer, List<Constraint>> propagate(Problem problem, String var, Object val, boolean apply) {
 		///In order to instantiate a new problem, we make a deepCopy of the true domains.
 		Map<String, Set> incrDomains = Problem.deepCopy(problem.getDomains());
+		
 		
 		//If apply, then we're instantiating var to val. 
 		//If not, we're taking it away from var's domain to explore other possibilites.
@@ -153,9 +220,12 @@ public class Problem {
 		}
 		incrDomains.put(var, tempSet);
 		
+		ImplicationGraph newGraph = ImplicationGraph.deepCopy(problem.getGraph());
+		newGraph.decisionNode(var, tempSet);
+		
 		//We now apply enumerate as told in the eponym method to the newly instantiated problem.
 		//Doing so we only dive deeper in the search space.
-		return Problem.enumerate(new Problem(incrDomains, problem.getConstraint()));
+		return Problem.enumerate(new Problem(incrDomains, problem.getConstraint(), newGraph));
 	}
 	
 	

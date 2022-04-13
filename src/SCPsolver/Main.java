@@ -56,7 +56,8 @@ public class Main {
 		Problem problem = new Problem(domains, constraints);
 		
 		System.out.println("Search has started");
-		System.out.println(Problem.enumerate(problem) + " solutions have been found.");		
+		Tuple<Integer, List<Constraint>> solution = Problem.enumerate(problem);		
+		System.out.println(solution.get1() + " solutions have been found.");		
 	}
 
 }

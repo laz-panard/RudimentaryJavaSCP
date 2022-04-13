@@ -11,4 +11,8 @@ public abstract class Constraint {
 		return true;
 	}
 	
+	public List<String> getVariables(){
+		return this.variables;
+	}
+	
 }

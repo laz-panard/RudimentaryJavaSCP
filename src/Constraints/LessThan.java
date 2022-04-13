@@ -20,9 +20,7 @@ public class LessThan extends Constraint{
 		this.variables.add(x2);
 	}
 	
-	public List<String> getVariables(){
-		return this.variables;
-	}
+	
 	
 	
 	//We filter by taking away all values of x1 that 
