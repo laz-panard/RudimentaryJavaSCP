@@ -15,4 +15,5 @@ public abstract class Constraint {
 		return this.variables;
 	}
 	
+	
 }

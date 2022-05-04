@@ -19,6 +19,10 @@ public class NotEqualPlusC extends Constraint {
 		this.c = c;
 	}
 	
+	public String toString() {
+		return "'" + this.getVariables().get(0) + " != " + this.getVariables().get(1) + " + " + this.getC() + "'";
+	}
+	
 	public List<String> getVariables(){
 		return this.variables;
 	}

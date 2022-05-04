@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import Constraints.Clause;
 import SCPsolver.Constraint;
 import SCPsolver.Tuple;
 
@@ -63,38 +64,155 @@ public class ImplicationGraph {
 		this.currNodes = currNodes;
 	}
 	
-	//Clear enough I think.
-	static public ImplicationGraph deepCopy(ImplicationGraph graph) {
-		// TODO
-		return null;
-	}
-	
 	//Add nodes according to some filtering realized by constraint, resulting in domains.
 	//Decision level is always 1.
 	public void nodeFiltering(Constraint constraint, Map<String, Set> domains) {
-		// TODO Auto-generated method stub
-		// Add nodes of variables with corresponding domain and dl = 1
+		List<Node> addedNodes = new ArrayList<Node>();
+		List<Tuple<Node, Constraint>> ascNodes = new ArrayList<Tuple<Node, Constraint>>();
 		
+		//Retrieving ascending nodes
+		for(Node n : this.getCurrNodes()) {
+			if (constraint.getVariables().contains(n.getVar())) {
+				ascNodes.add(new Tuple<Node, Constraint>(n, constraint));
+			}
+		}
+		
+		//Creating new nodes
+		for(String var : constraint.getVariables()) {
+			Node newNode = new Node(var, domains.get(var), 1, ascNodes, new ArrayList<Tuple<Node, Constraint>>());
+			addedNodes.add(newNode);
+		}
+		
+		//Updating nodes list (adding new nodes and actualising current nodes in nodes list)
+		for(Node currN : this.getCurrNodes()) {
+			//Updating nodes in nodes list
+			for(Node n : this.getNodes()) {
+				if(n.equals(currN)){
+					for(Node addedNode : addedNodes) {
+						n.getDescNodes().add(new Tuple<Node, Constraint>(addedNode, constraint));
+					}
+				}
+			}
+		}
+		this.getNodes().addAll(addedNodes);
+		
+		//Updating current nodes
+		List<Node> toDel = new ArrayList<Node>();
+		for(Node currNode : this.getCurrNodes()) {
+			for(Node newNode : addedNodes) {
+				if (currNode.getVar() == newNode.getVar()) {
+					toDel.add(currNode);
+				}
+			}
+		}
+		this.getCurrNodes().removeAll(toDel);
+		this.getCurrNodes().addAll(addedNodes);
 	}
 	
 	//Method used to get a constraint out of the conflict node. 
 	//If there is no conflict node in the problem, this methode should return null.
 	//This method is the Java interpretation of the algorithm presented in...
 	//"A Proof-Producing CSP Solver", by M.Veksler and O.Strichman.
-	public Constraint conflictLearn() {
-		// TODO Auto-generated method stub
-		return null;
+/*
+	public Clause conflictLearn() {
+		if (this.getConflict() == null) {
+			return null;
+		}
+		
+		
+		Clause cl = this.getConflict().explain();
+		
+		List<Tuple<Node, Constraint>> pre_pred = this.getConflict().getAscNodes();
+		List<Node> pred = new ArrayList<Node>();
+		for(Tuple<Node, Constraint> t : pre_pred) {
+			pred.add(t.get1());
+		}
+		
+		List<Node> front = new ArrayList<Node>();
+		for(Node n : pred) {
+			if (cl.getVariables().contains(n.getVar())) {
+				front.add(n);
+			}
+		}
+		
+		boolean stopCriterion = true;
+		
+		boolean alreadyMet = false;
+		for(Node n : front) {
+			if(n.getDecisionLevel() == 1) {
+				if(alreadyMet) {
+					stopCriterion = false;
+				}
+				alreadyMet = true;
+			}
+		}
+		
+		while(!stopCriterion) {
+			Node currNode = front.get(0);
+			front.remove(currNode);
+			Clause expl = currNode.explain();
+			cl = cl.resolve(expl, currNode.getVar());
+			
+			pre_pred = currNode.getAscNodes();
+			pred = new ArrayList<Node>();
+			for(Tuple<Node, Constraint> t : pre_pred) {
+				pred.add(t.get1());
+			}
+			
+			for(Node n : front) {
+				if (!cl.getVariables().contains(n.getVar())) {
+					front.remove(n);
+				}
+			}
+			for(Node n : pred) {
+				if (cl.getVariables().contains(n.getVar()) && (!front.contains(n))) {
+					front.add(n);
+				}
+			}
+			
+			alreadyMet = false;
+			for(Node n : front) {
+				if(n.getDecisionLevel() == 1) {
+					if(alreadyMet) {
+						stopCriterion = false;
+					}
+					alreadyMet = true;
+				}
+			}			
+		}
+		
+		return cl;
+		
 	}
-
+	*/
+	
 	//Adds a decision node, making it the current node of specified var, with values.
 	//Decision level is always 0.
 	public void decisionNode(String var, Set values) {
 		Node decision = new Node(var, values, 0);
+		Node toRemove = null;
 		for (Node n : this.getCurrNodes()) {
 			if (n.getVar() == var) {
-				this.getCurrNodes().remove(n);
-				this.getCurrNodes().add(decision);
+				toRemove = n;
 			}
 		}
+
+		this.getCurrNodes().remove(toRemove);
+		
+		this.getCurrNodes().add(decision);
+		this.getNodes().add(decision);
 	}
+	
+	public void print() {
+		List<Node> visited = new ArrayList<Node>();
+		
+		for (Node n : this.getNodes()) {
+			if (!visited.contains(n)) {
+				visited.add(n);
+				n.print();
+			}
+		}
+		
+	}
+
 }

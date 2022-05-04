@@ -1,9 +1,11 @@
 package DecisionTree;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import Constraints.Clause;
 import SCPsolver.Constraint;
 import SCPsolver.Tuple;
 
@@ -134,29 +136,30 @@ public class Node {
 		}
 	}
 	
+	public boolean equals(Node n) {
+		return (n!=null)
+				&& (n.getAscNodes().containsAll(this.getAscNodes())) && (this.getAscNodes().containsAll(n.getAscNodes()))
+				&& (n.getDescNodes().containsAll(this.getDescNodes())) && (this.getDescNodes().containsAll(n.getDescNodes()))
+				&& (n.getVar() == this.getVar())
+				&& (n.getDecisionLevel() == this.getDecisionLevel())
+				&& (n.getDomain().equals(this.getDomain()));
+	}
 	
 	
+	public void print() {
+		System.out.println("    Var : " + this.getVar() + " // Decision Level : " + this.getDecisionLevel() + " // Domain : " + this.getDomain().toString());
+		if(!this.getAscNodes().isEmpty()) {
+			System.out.println("    Ascending Nodes :");
+			for (Tuple<Node, Constraint> t : this.getAscNodes()) {
+				System.out.println("        (obtained by constraint " + t.get2().toString() 
+						+ " applied to : Var : " + t.get1().getVar() 
+						+ " // Decision Level : " + t.get1().getDecisionLevel() 
+						+ " // Domain : " + t.get1().getDomain().toString());
+			}
+		}
+	}
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+//	public Clause explain() {
+//		
+//	}
 }

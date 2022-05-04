@@ -21,7 +21,9 @@ public class LessThan extends Constraint{
 	}
 	
 	
-	
+	public String toString() {
+		return "'" + this.getVariables().get(0) + " < " + this.getVariables().get(1) + "'";
+	}
 	
 	//We filter by taking away all values of x1 that 
 	//are superior or equal to max(x2) and values of x2 that

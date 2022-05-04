@@ -9,6 +9,7 @@ import java.util.Set;
 
 import Constraints.LessThan;
 import Constraints.NotEqualPlusC;
+import DecisionTree.ImplicationGraph;
 
 public class Main {
 	
@@ -56,8 +57,20 @@ public class Main {
 		Problem problem = new Problem(domains, constraints);
 		
 		System.out.println("Search has started");
-		Tuple<Integer, List<Constraint>> solution = Problem.enumerate(problem);		
-		System.out.println(solution.get1() + " solutions have been found.");		
+		Triple<Integer, List<Constraint>, ImplicationGraph> solution = Problem.enumerate(problem);		
+		System.out.println(solution.get1() + " solutions have been found.");	
+		System.out.println("Constraints :");
+		for(Constraint c : solution.get2()) {
+			System.out.println(c.toString());
+		}
+		
+		System.out.println("-------");
+		System.out.println("-------");
+		System.out.println("Implication Graph");
+		
+		solution.get3().print();
+		
+		//4 places need go be uncommented (1 in problem, 1 in ImplicationGraph, 1 in Clause and 1 somewhere else)
 	}
 
 }

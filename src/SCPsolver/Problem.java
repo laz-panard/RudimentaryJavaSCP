@@ -138,7 +138,7 @@ public class Problem {
 	
 	//The main recursive method navigating through the search space.
 	//Returns the number of solutions to the problem.
-	static public Tuple<Integer, List<Constraint>> enumerate(Problem problem) {
+	static public Triple<Integer, List<Constraint>, ImplicationGraph> enumerate(Problem problem) {
 		//We try to filter with all constraints and repeat while all constraints
 		//actually restrain variables' domains. We stop once every constraint proves
 		//not to be able to restrain anymore in a single iteration.
@@ -168,44 +168,70 @@ public class Problem {
 			}
 		}
 		
-		//S'il y a conflit dans graph, on le résout puis on l'ajout aux nouvelles contraintes
-		//COMMENT ON AJOUTE LA CONTRAINTE PTN -> un accu 
-		if (problem.getGraph().getConflict() != null) {
+		/*if (problem.getGraph().getConflict() != null) {
 			problem.getConstraint().add(problem.getGraph().conflictLearn());
-		}
+		}*/
 		
 		//Then, we enter search space by making a decision
 		Tuple<String, Object> decision = problem.createDecision();
 		//If so, we have a solution since all domains are singletons.
 		if(decision == null) {
-			return new Tuple<Integer, List<Constraint>>(1, problem.getConstraint());
+			return new Triple<Integer, List<Constraint>, ImplicationGraph>(1, problem.getConstraint(), problem.getGraph());
 		}
 		
 		String var = decision.get1();
 		Object val = decision.get2();
 		
-		//Problem is unsolvable.
+		//Problem is unsolvable in this part of search space.
 		if(val == null) {
-			return new Tuple<Integer, List<Constraint>>(0, problem.getConstraint());
+			return new Triple<Integer, List<Constraint>, ImplicationGraph>(0, problem.getConstraint(), problem.getGraph());
 		}
 		
 		//We redo the same operation, once with var instantiated to val,
 		//and once with val taken away from val's domain. Propagate only
 		//allows to do so without actually modifying our problem's domain.
 		
-		Tuple<Integer, List<Constraint>> leftSearch = Problem.propagate(problem, var, val, true);
+		List<Node> currNodes = problem.getGraph().getCurrNodes();
+		List<Node> nodes = problem.getGraph().getNodes();
+		List<Integer> currNodesIndex = new ArrayList<Integer>();
 		
+		for(Node n : nodes) {
+			if (currNodes.contains(n)) {
+				currNodesIndex.add(nodes.indexOf(n));
+			}
+		}
+		
+		Triple<Integer, List<Constraint>, ImplicationGraph> leftSearch = Problem.propagate(problem, var, val, true);
+		
+		//Updating problem values with recursively-updated values of the accumulator
 		problem.setConstraint(leftSearch.get2());
+		ImplicationGraph newGraph = leftSearch.get3();
+		List<Node> newCurrNodes = new ArrayList<Node>();
+		for(Integer i : currNodesIndex) {
+			newCurrNodes.add(newGraph.getNodes().get(i));
+		}
+		newGraph.setCurrNodes(newCurrNodes);
+		newGraph.setConflict(null);
+		problem.setGraph(newGraph);
 		
-		Tuple<Integer, List<Constraint>> rightSearch = Problem.propagate(problem, var, val, false);
+		Triple<Integer, List<Constraint>, ImplicationGraph> rightSearch = Problem.propagate(problem, var, val, false);
 		
 		problem.setConstraint(rightSearch.get2());
-		return new Tuple<Integer, List<Constraint>>(leftSearch.get1() + rightSearch.get1(), problem.getConstraint());
+		newGraph = rightSearch.get3();
+		newCurrNodes = new ArrayList<Node>();
+		for(Integer i : currNodesIndex) {
+			newCurrNodes.add(newGraph.getNodes().get(i));
+		}
+		newGraph.setCurrNodes(newCurrNodes);
+		newGraph.setConflict(null);
+		problem.setGraph(newGraph);
+		
+		return new Triple<Integer, List<Constraint>, ImplicationGraph>(leftSearch.get1() + rightSearch.get1(), problem.getConstraint(), problem.getGraph());
 	}
 	
 	//Allow to instantiate variables to chosen values and to restrain abusively variables' domains
 	//Without actually modifying our problem's domains. Doing so, we instantiate new problems.
-	static public Tuple<Integer, List<Constraint>> propagate(Problem problem, String var, Object val, boolean apply) {
+	static public Triple<Integer, List<Constraint>, ImplicationGraph> propagate(Problem problem, String var, Object val, boolean apply) {
 		///In order to instantiate a new problem, we make a deepCopy of the true domains.
 		Map<String, Set> incrDomains = Problem.deepCopy(problem.getDomains());
 		
@@ -220,12 +246,11 @@ public class Problem {
 		}
 		incrDomains.put(var, tempSet);
 		
-		ImplicationGraph newGraph = ImplicationGraph.deepCopy(problem.getGraph());
-		newGraph.decisionNode(var, tempSet);
+		problem.getGraph().decisionNode(var, tempSet);
 		
 		//We now apply enumerate as told in the eponym method to the newly instantiated problem.
 		//Doing so we only dive deeper in the search space.
-		return Problem.enumerate(new Problem(incrDomains, problem.getConstraint(), newGraph));
+		return Problem.enumerate(new Problem(incrDomains, problem.getConstraint(), problem.getGraph()));
 	}
 	
 	
