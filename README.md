@@ -1,4 +1,4 @@
-# SCP Solver with clause restreining auto-learning (Java)
+# SCP Solver with clause restraining auto-learning (Java)
 
 ## Context
 
