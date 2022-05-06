@@ -30,7 +30,7 @@ public class LessThan extends Constraint{
 	//are inferior or equal to min(x1).
 	//
 	//We shall return if the method has indeed filtered (true) or not (false).
-	public boolean filter(Problem problem) {
+	public List<String> filter(Problem problem) {
 		String x1 = this.getVariables().get(0);
 		String x2 = this.getVariables().get(1);
 		
@@ -41,7 +41,7 @@ public class LessThan extends Constraint{
 		//If domains are empty, we shall not filter anymore since 
 		//problem is not solved in this branch of search space
 		if((d1.size() == 0) || (d2.size() == 0)) {
-			return false;
+			return new ArrayList<String>();
 		}
 		
 		Integer min1 = Collections.min(d1);
@@ -68,11 +68,17 @@ public class LessThan extends Constraint{
 		problem.getDomains().put(x1, new_d1);
 		problem.getDomains().put(x2, new_d2);
 		
-		//If the added sizes of our two new domains is the same than the old ones,
-		//it is clear that no value has been deleted (we don't add any new value).
-		int size = d1.size() + d2.size();
-		int sizeThen = new_d1.size() + new_d2.size();
-		return (size != sizeThen); 
+		List<String> modifiedVar = new ArrayList<String>();
+		
+		if(new_d1.size() != d1.size()) {
+			modifiedVar.add(x1);
+		}
+		
+		if(new_d2.size() != d2.size()) {
+			modifiedVar.add(x2);
+		}
+		
+		return modifiedVar; 
 	
 	}
 }

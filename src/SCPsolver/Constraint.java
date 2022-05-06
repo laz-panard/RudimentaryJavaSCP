@@ -6,9 +6,9 @@ import java.util.List;
 public abstract class Constraint {
 	protected List<String> variables;
 	
-	//Filter return true if it has indeed filtered. Else it return false. While true, problem is unsolved. 
-	public boolean filter(Problem problem) {
-		return true;
+	//Filter return list of variables modified by filtering 
+	public List<String> filter(Problem problem) {
+		return null;
 	}
 	
 	public List<String> getVariables(){

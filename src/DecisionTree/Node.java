@@ -149,12 +149,14 @@ public class Node {
 	public void print() {
 		System.out.println("    Var : " + this.getVar() + " // Decision Level : " + this.getDecisionLevel() + " // Domain : " + this.getDomain().toString());
 		if(!this.getAscNodes().isEmpty()) {
-			System.out.println("    Ascending Nodes :");
+			System.out.println("    	Obtained by constraint" + 
+							this.getAscNodes().get(0).get2().toString() + 
+							" applied to following ascending Nodes :");
 			for (Tuple<Node, Constraint> t : this.getAscNodes()) {
-				System.out.println("        (obtained by constraint " + t.get2().toString() 
-						+ " applied to : Var : " + t.get1().getVar() 
+				System.out.println("        (Var : " + t.get1().getVar() 
 						+ " // Decision Level : " + t.get1().getDecisionLevel() 
-						+ " // Domain : " + t.get1().getDomain().toString());
+						+ " // Domain : " + t.get1().getDomain().toString() 
+						+ ")");
 			}
 		}
 	}

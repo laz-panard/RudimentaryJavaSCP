@@ -34,7 +34,7 @@ public class NotEqualPlusC extends Constraint {
 	
 	//We can filter only when one of the relevant domains is a singleton.
 	//If so, we simple take the value of the singleton away from the other domain.
-	public boolean filter(Problem problem) {
+	public List<String> filter(Problem problem) {
 		String x1 = this.getVariables().get(0);
 		String x2 = this.getVariables().get(1);
 		
@@ -46,7 +46,7 @@ public class NotEqualPlusC extends Constraint {
 		//therefore we do not filter.
 		//If both domains are not empty and not a singleton, we cannot filter.
 		if((d1.size() == 0 || d2.size() == 0) || (d1.size() > 1 && d2.size() > 1)) {
-			return false;
+			return new ArrayList<String>();
 		}
 		
 		//New domains will replace the old ones.
@@ -78,10 +78,17 @@ public class NotEqualPlusC extends Constraint {
 		problem.getDomains().put(x1, new_d1);
 		problem.getDomains().put(x2, new_d2);
 		
-		//If the added sizes of our two new domains is the same than the old ones,
-		//it is clear that no value has been deleted (we don't add any new value).
-		int size = d1.size() + d2.size();
-		int sizeThen = new_d1.size() + new_d2.size();
-		return (size != sizeThen);
+		
+		List<String> modifiedVar = new ArrayList<String>();
+		
+		if(new_d1.size() != d1.size()) {
+			modifiedVar.add(x1);
+		}
+		
+		if(new_d2.size() != d2.size()) {
+			modifiedVar.add(x2);
+		}
+		
+		return modifiedVar; 
 	}
 }

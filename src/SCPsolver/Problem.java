@@ -149,9 +149,10 @@ public class Problem {
 			for(Constraint c : problem.getConstraint()) {
 				
 				if(!conflict) {
-					if(c.filter(problem)) {
+					List<String> modifiedVar = c.filter(problem);
+					if(!modifiedVar.isEmpty()) {
 						notStable = true;
-						problem.getGraph().nodeFiltering(c, problem.getDomains());
+						problem.getGraph().nodeFiltering(c, problem.getDomains(), modifiedVar);
 					
 						//We check wether or not a conflicting node has been created
 					

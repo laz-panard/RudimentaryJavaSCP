@@ -66,20 +66,24 @@ public class ImplicationGraph {
 	
 	//Add nodes according to some filtering realized by constraint, resulting in domains.
 	//Decision level is always 1.
-	public void nodeFiltering(Constraint constraint, Map<String, Set> domains) {
+	public void nodeFiltering(Constraint constraint, Map<String, Set> domains, List<String> modifiedVar) {
 		List<Node> addedNodes = new ArrayList<Node>();
 		List<Tuple<Node, Constraint>> ascNodes = new ArrayList<Tuple<Node, Constraint>>();
 		
 		//Retrieving ascending nodes
+		int decisionLevel = 0;
 		for(Node n : this.getCurrNodes()) {
 			if (constraint.getVariables().contains(n.getVar())) {
 				ascNodes.add(new Tuple<Node, Constraint>(n, constraint));
+				if (n.getDecisionLevel() > decisionLevel) {
+					decisionLevel = n.getDecisionLevel();
+				}
 			}
 		}
 		
 		//Creating new nodes
-		for(String var : constraint.getVariables()) {
-			Node newNode = new Node(var, domains.get(var), 1, ascNodes, new ArrayList<Tuple<Node, Constraint>>());
+		for(String var : modifiedVar) {
+			Node newNode = new Node(var, domains.get(var), decisionLevel, ascNodes, new ArrayList<Tuple<Node, Constraint>>());
 			addedNodes.add(newNode);
 		}
 		
@@ -189,14 +193,20 @@ public class ImplicationGraph {
 	//Adds a decision node, making it the current node of specified var, with values.
 	//Decision level is always 0.
 	public void decisionNode(String var, Set values) {
-		Node decision = new Node(var, values, 0);
+		
 		Node toRemove = null;
+		int decisionLevel = 0;
 		for (Node n : this.getCurrNodes()) {
+			if (n.getDecisionLevel() > decisionLevel) {
+				decisionLevel = n.getDecisionLevel();
+			}
 			if (n.getVar() == var) {
 				toRemove = n;
 			}
 		}
-
+		
+		Node decision = new Node(var, values, 1 + decisionLevel);
+		
 		this.getCurrNodes().remove(toRemove);
 		
 		this.getCurrNodes().add(decision);
